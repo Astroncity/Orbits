@@ -11,7 +11,7 @@ typedef enum Class{
 typedef struct Planet{
     Vector2 position;
     Vector2 velocity;
-    double mass;
+    int mass;
     double radius;
     Color color;
     Class class;
@@ -32,5 +32,7 @@ void calcAppliedForce(int i);
 void destroyPlanet(int id);
 void initEmptyPlanets();
 void calcPlanetCollisions();
+void drawPlanetSettings();
+void handleSlider();
 
 #endif // MAIN_H

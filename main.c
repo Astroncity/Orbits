@@ -31,16 +31,41 @@ bool f11Down = false;
 bool spaceDown = false;
 bool upArrowDown = false; 
 bool downArrowDown = false;
+bool mouseLeftDown = false;
 
 Vector2 realMouse = {0, 0};
 Vector2 mouse = {0, 0};
+Vector2 lastMouse = {0, 0};
+
+
+// UI Tings
+typedef struct Slider{
+    Vector2 range;
+    Vector2 position;
+    int value;
+    double size;
+    double stepSize;
+    int* valuep;
+}Slider;
+
+typedef struct PlanetAttributes{
+    int mass;
+    Color color;
+    Class class;
+}PlanetAttributes;
+
+Color sliderBackgroundColor = (Color){50, 50, 50, 255};
+Color sliderColor = (Color){100, 100, 100, 255};
+
+
+
 
 
 
 Planet planets[MAX_PLANETS];
 int planetCount = 0;
 int merges = 0;
-
+PlanetAttributes currentPlanetAttributes = {50, BLUE, PLANET};
 
 int main(){
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -65,7 +90,10 @@ int main(){
     planetCount = 1;
 
     // End testing planets
+    lastMouse = mouse;
 
+    //UI Testing
+    Slider slider1 = {{50, 100}, {100, 100}, &currentPlanetAttributes.mass, 0, 1, &currentPlanetAttributes.mass};
 
     while(!WindowShouldClose()){
         runtime += 1;
@@ -76,6 +104,10 @@ int main(){
         mouse.x = (realMouse.x - (GetScreenWidth() - (SCREENWIDTH*scale))*0.5f)/scale;
         mouse.y = (realMouse.y - (GetScreenHeight() - (SCREENHEIGHT*scale))*0.5f)/scale;
         mouse = vector2Clamp(mouse, (Vector2){0, 0}, (Vector2){(float)SCREENWIDTH, (float)SCREENHEIGHT});
+
+
+
+        IsMouseButtonDown(MOUSE_LEFT_BUTTON) ? slider1.value = mouse.x - slider1.position.x : 0;
 
 
         if(IsKeyPressed(KEY_SPACE) && !spaceDown){
@@ -113,6 +145,7 @@ int main(){
             ClearBackground(BLACK);
 
             drawPlanets();
+            handleSlider(&slider1);
 
         EndTextureMode();
 
@@ -348,4 +381,49 @@ void initEmptyPlanets(){
         Planet p = {(Vector2){0, 0}, (Vector2){0, 0}, 0, 0 , (Color){0, 0, 0, 0}, PLANET, -1};
         planets[i] = p;
     }
+}
+
+void drawPlanetSettings(){
+
+}
+
+void handleSlider(Slider* slider){
+    int max = slider->range.y;
+    int min = slider->range.x;
+    int sliderX = slider->position.x + slider->value - min;
+    int sliderWidth = 10;
+    int value = slider->value;
+    double stepSize = slider->stepSize;
+    Vector2 sliderPos = slider->position;
+
+
+    bool isMouseOver = CheckCollisionPointRec(mouse, (Rectangle){sliderX - min, sliderPos.y - 5, sliderWidth, 20});
+
+
+    if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && isMouseOver){
+        value = (mouse.x - sliderPos.x) * stepSize;
+    }
+    else{
+        lastMouse = mouse;
+    }
+
+    if(value < min){
+        value = min;
+    }
+    else if(value > max){
+        value = max;
+    }
+
+    value = round(value / stepSize) * stepSize;
+
+    *slider->valuep = value;
+    slider->value = value;
+    slider->position = sliderPos;
+
+    sliderX = sliderPos.x + value;
+
+
+    DrawRectangle(sliderPos.x, sliderPos.y, (max / stepSize) - min, 10 + slider->size, sliderBackgroundColor);
+    DrawRectangle(sliderX - min, sliderPos.y - 5, sliderWidth, 20, sliderColor);
+    printf("%i\n", value);
 }
