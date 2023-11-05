@@ -27,5 +27,10 @@ double distanceV2(Vector2 v1, Vector2 v2);
 void addPlanet();
 int getNearestStar(Vector2 pos);
 double clampAngle(double angle);
+Planet* initPlanet(Vector2 pos, Vector2 vel, double mass, Color color);
+void calcAppliedForce(int i);
+void destroyPlanet(int id);
+void initEmptyPlanets();
+void calcPlanetCollisions();
 
 #endif // MAIN_H
