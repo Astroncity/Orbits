@@ -8,6 +8,12 @@ typedef enum Class{
     PLANET,
     STAR
 }Class;
+
+typedef struct TrailPoint{
+    Vector2 position;
+    int id;
+}TrailPoint;
+
 typedef struct Planet{
     Vector2 position;
     Vector2 velocity;
@@ -17,6 +23,9 @@ typedef struct Planet{
     Class class;
     int id;
 }Planet;
+
+
+
 
 void drawPlanets();
 void handlePlanets();

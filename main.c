@@ -9,7 +9,7 @@
 
 #define SCREENWIDTH 1920
 #define SCREENHEIGHT 1080
-#define PHYSICSSCALE 1000000000000
+#define PHYSICSSCALE 1000000000
 #define G 0.0000000000667 * PHYSICSSCALE
 
 #define MAX(a, b) ((a)>(b)? (a) : (b))
@@ -81,19 +81,48 @@ int main(){
 
     initEmptyPlanets();
 
-    // Testing planets
-    //Planet p1 = {(Vector2){SCREENWIDTH/2, 900}, (Vector2){450, 0}, 100, 10, BLUE, PLANET, 0};
-    Planet star = {(Vector2){SCREENWIDTH/2, SCREENHEIGHT/2}, (Vector2){0, 0}, 5000000, 100, YELLOW, STAR, 0};
+    Planet star = {(Vector2){SCREENWIDTH/2, SCREENHEIGHT/2}, (Vector2){0, 0}, 1410065407, 100, YELLOW, STAR, 0};
 
-    //planets[0] = p1;
     planets[0] = star;
     planetCount = 1;
 
-    // End testing planets
     lastMouse = mouse;
 
     //UI Testing
-    Slider slider1 = {{50, 100}, {100, 100}, &currentPlanetAttributes.mass, 0, 1, &currentPlanetAttributes.mass};
+    //Slider slider1 = {{50, 100}, {100, 100}, &currentPlanetAttributes.mass, 0, 1, &currentPlanetAttributes.mass};
+
+
+
+    TrailPoint p1 = {{100, 100}, 0};
+    TrailPoint p2 = {{200, 200}, 1};
+    TrailPoint p3 = {{300, 300}, 2};
+
+    /*Node rootVal = {&p1, NULL};
+    Node* root = &rootVal;
+    Node p3Val = {&p3, NULL};
+    Node p2Val = {&p2, &p3Val};
+    root -> next = &p2Val;*/
+
+    Node* root = (Node*)malloc(sizeof(Node));
+    root -> data = &p1; root -> next = NULL;
+
+    Node* p2Node = (Node*)malloc(sizeof(Node));
+    p2Node -> data = &p2; p2Node -> next = NULL;
+    root -> next = p2Node;
+
+    Node* p3Node = (Node*)malloc(sizeof(Node));
+    p3Node -> data = &p3; p3Node -> next = NULL;
+    p2Node -> next = p3Node;
+    
+
+    printLinkedList(&root);
+    removeTrailPoint(&root, 1);
+    printf("\n");
+    printLinkedList(&root);
+
+
+
+
 
     while(!WindowShouldClose()){
         runtime += 1;
@@ -107,7 +136,7 @@ int main(){
 
 
 
-        IsMouseButtonDown(MOUSE_LEFT_BUTTON) ? slider1.value = mouse.x - slider1.position.x : 0;
+        //IsMouseButtonDown(MOUSE_LEFT_BUTTON) ? slider1.value = mouse.x - slider1.position.x : 0;
 
 
         if(IsKeyPressed(KEY_SPACE) && !spaceDown){
@@ -117,7 +146,7 @@ int main(){
             spaceDown = false;
         }
 
-        if(IsKeyPressed(KEY_UP) && !upArrowDown){
+        /*if(IsKeyPressed(KEY_UP) && !upArrowDown){
             timeScale += 0.05;
         }
         else{
@@ -125,6 +154,13 @@ int main(){
         }
 
         if(IsKeyPressed(KEY_DOWN) && !downArrowDown){
+            timeScale -= 0.05;
+        }*/
+
+        if(GetMouseWheelMove() > 0){
+            timeScale += 0.05;
+        }
+        else if(GetMouseWheelMove() < 0){
             timeScale -= 0.05;
         }
 
@@ -145,7 +181,7 @@ int main(){
             ClearBackground(BLACK);
 
             drawPlanets();
-            handleSlider(&slider1);
+            //handleSlider(&slider1);
 
         EndTextureMode();
 
@@ -387,6 +423,7 @@ void drawPlanetSettings(){
 
 }
 
+
 void handleSlider(Slider* slider){
     int max = slider->range.y;
     int min = slider->range.x;
@@ -425,5 +462,5 @@ void handleSlider(Slider* slider){
 
     DrawRectangle(sliderPos.x, sliderPos.y, (max / stepSize) - min, 10 + slider->size, sliderBackgroundColor);
     DrawRectangle(sliderX - min, sliderPos.y - 5, sliderWidth, 20, sliderColor);
-    printf("%i\n", value);
+    //printf("%i\n", value);
 }

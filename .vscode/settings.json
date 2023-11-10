@@ -61,6 +61,7 @@
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
     "utils.h": "c",
-    "type_traits": "c"
+    "type_traits": "c",
+    "cstdlib": "c"
   }
 }
