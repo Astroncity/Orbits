@@ -45,13 +45,13 @@ void removeNode(Node** root, bool (*compare)(void*, void*), void* target){
             if(prev == NULL){
                 Node* temp = current;
                 *root = next;
-                //free(temp -> data);
+                free(temp -> data);
                 free(temp);
             }
             else{
                 Node* temp = current;
                 prev -> next = current -> next;
-                //free(temp -> data);
+                free(temp -> data);
                 free(temp);
             }
         }
@@ -84,7 +84,8 @@ void deAllocateLinkedList(Node** root){
     Node* current = *root;
     while(current != NULL){
         Node* next = current -> next;
-        free(current);  // Free the node
+        free(current -> data);
+        free(current); 
         current = next;
     }
 }

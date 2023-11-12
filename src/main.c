@@ -70,7 +70,6 @@ PlanetAttributes currentPlanetAttributes = {50, BLUE, PLANET};
 int main(){
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(SCREENWIDTH, SCREENHEIGHT, "Orbits");
-    float scale = MIN((float)GetScreenWidth()/SCREENWIDTH, (float)GetScreenHeight()/SCREENHEIGHT);
     //SetWindowIcon(LoadImageFromMemory(".png", logoImage, sizeof(logoImage)));
     
     SetTargetFPS(144);
@@ -108,6 +107,23 @@ int main(){
     while(!WindowShouldClose()){
         runtime += 1;
         deltaTime = GetFrameTime() * timeScale;
+
+        float scale = MIN((float)GetScreenWidth()/SCREENWIDTH, (float)GetScreenHeight()/SCREENHEIGHT);
+
+
+        if (IsKeyPressed(KEY_ENTER) && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT))){
+ 			int display = GetCurrentMonitor();
+ 
+            
+            if (IsWindowFullscreen()){
+                SetWindowSize(SCREENWIDTH, SCREENHEIGHT);
+            }
+            else{
+                SetWindowSize(GetMonitorWidth(display), GetMonitorHeight(display));
+            }
+ 
+ 			ToggleFullscreen();
+ 		}
 
         // Scaling mouse position
         realMouse = GetMousePosition();
@@ -167,6 +183,11 @@ int main(){
             DrawCircleV(mouse, (250 / 10), (Color){255, 255, 255, 100});
             //handleSlider(&slider1);
 
+            DrawFPS(10, 50);
+            DrawText(TextFormat("Planet Count: %i", planetCount), 10, 10, 20, WHITE);
+            DrawText(TextFormat("Time Scale: %d", timeScale), 10, 30, 20, WHITE);
+            DrawText(TextFormat("Merges: %i", merges), 10, 70, 20, WHITE);
+
         EndTextureMode();
 
 
@@ -178,11 +199,6 @@ int main(){
             DrawTexturePro(target.texture, (Rectangle){ 0.0f, 0.0f, (float)target.texture.width, (float)-target.texture.height },
                         (Rectangle){ (GetScreenWidth() - ((float)SCREENWIDTH*scale))*0.5f, (GetScreenHeight() - ((float)SCREENHEIGHT*scale))*0.5f,
                         (float)SCREENWIDTH*scale, (float)SCREENHEIGHT*scale }, (Vector2){ 0, 0 }, 0.0f, WHITE);
-        
-            DrawFPS(10, 50);
-            DrawText(TextFormat("Planet Count: %i", planetCount), 10, 10, 20, WHITE);
-            DrawText(TextFormat("Time Scale: %d", timeScale), 10, 30, 20, WHITE);
-            DrawText(TextFormat("Merges: %i", merges), 10, 70, 20, WHITE);
             
         EndDrawing();
 
@@ -191,6 +207,7 @@ int main(){
     // Clean up
     UnloadRenderTexture(target);
     CloseWindow();
+    return 0;
 }
 
 
@@ -352,7 +369,7 @@ double clampAngle(double angle){
 
 Planet* initPlanet(Vector2 pos, Vector2 vel, double mass, Color color){
     double radius = mass / 10;
-    Node* trailRoot = (Node*) malloc((sizeof(Node) + sizeof(TrailPoint)));
+    Node* trailRoot = (Node*) malloc((sizeof(Node)));
     TrailPoint* point = (TrailPoint*) malloc(sizeof(TrailPoint));
     point -> position = pos;
     point -> id = 0;
@@ -428,7 +445,7 @@ void drawPlanetSettings(){
 void handlePlanetTrails(){
     for(int i = 0; i < planetCount; i++){
         if(planets[i].class == STAR){continue;}
-        Node* newNode = (Node*) malloc(sizeof(Node) + sizeof(TrailPoint));
+        Node* newNode = (Node*) malloc(sizeof(Node));
         TrailPoint* point = (TrailPoint*) malloc(sizeof(TrailPoint));
         point -> position = planets[i].position;
         point -> id = planets[i].trailLength;
@@ -438,14 +455,12 @@ void handlePlanetTrails(){
         planets[i].trailLength++;    
 
         if(planets[i].trailLength >= MAX_TRAIL_LENGTH){
-            //printf("trailLength: %i\n", planets[i].trailLength);
-            TrailPoint* trailRoot = (TrailPoint*)planets[i].trailRoot -> data;
-            if(trailRoot -> id > 997){ // If this isn't here it will crash for some reason
-                trailRoot -> id = 997;
-            }
-            removeNode(&planets[i].trailRoot, compareTrailPoints, planets[i].trailRoot);
+            Node* oldRoot = planets[i].trailRoot;
+            planets[i].trailRoot = oldRoot->next;
+            free(oldRoot->data);
+            free(oldRoot);
             planets[i].trailLength--;
-        } 
+        }  
     }
 
 }

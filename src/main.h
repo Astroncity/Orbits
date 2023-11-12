@@ -3,7 +3,7 @@
 
 #include "raylib.h"
 #include "utils.h"
-#define MAX_TRAIL_LENGTH 2000
+#define MAX_TRAIL_LENGTH 1000
 
 typedef enum Class{
     PLANET,
