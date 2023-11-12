@@ -2,7 +2,8 @@
 #define MAIN_H
 
 #include "raylib.h"
-
+#include "utils.h"
+#define MAX_TRAIL_LENGTH 2000
 
 typedef enum Class{
     PLANET,
@@ -17,11 +18,14 @@ typedef struct TrailPoint{
 typedef struct Planet{
     Vector2 position;
     Vector2 velocity;
-    int mass;
+    long mass;
     double radius;
     Color color;
     Class class;
     int id;
+    Node* trailRoot;
+    int lifespan;
+    int trailLength;
 }Planet;
 
 
@@ -42,6 +46,8 @@ void destroyPlanet(int id);
 void initEmptyPlanets();
 void calcPlanetCollisions();
 void drawPlanetSettings();
-void handleSlider();
+void handlePlanetTrails();
+void drawPlanetTrails();
+//void handleSlider();
 
 #endif // MAIN_H

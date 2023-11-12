@@ -9,8 +9,8 @@
 
 #define SCREENWIDTH 1920
 #define SCREENHEIGHT 1080
-#define PHYSICSSCALE 1000000000
-#define G 0.0000000000667 * PHYSICSSCALE
+#define PHYSICSSCALE 10000
+#define G 0.0000000000667
 
 #define MAX(a, b) ((a)>(b)? (a) : (b))
 #define MIN(a, b) ((a)<(b)? (a) : (b))
@@ -22,7 +22,7 @@
 
 int runtime = 0;
 double deltaTime;
-double timeScale = 1.0;
+int timeScale = 500;
 
 bool debug = false;
 
@@ -81,7 +81,7 @@ int main(){
 
     initEmptyPlanets();
 
-    Planet star = {(Vector2){SCREENWIDTH/2, SCREENHEIGHT/2}, (Vector2){0, 0}, 1410065407, 100, YELLOW, STAR, 0};
+    Planet star = {(Vector2){SCREENWIDTH/2, SCREENHEIGHT/2}, (Vector2){0, 0}, 83250000, 100, YELLOW, STAR, 0, NULL};
 
     planets[0] = star;
     planetCount = 1;
@@ -92,34 +92,15 @@ int main(){
     //Slider slider1 = {{50, 100}, {100, 100}, &currentPlanetAttributes.mass, 0, 1, &currentPlanetAttributes.mass};
 
 
-
-    TrailPoint p1 = {{100, 100}, 0};
-    TrailPoint p2 = {{200, 200}, 1};
-    TrailPoint p3 = {{300, 300}, 2};
-
-    /*Node rootVal = {&p1, NULL};
-    Node* root = &rootVal;
-    Node p3Val = {&p3, NULL};
-    Node p2Val = {&p2, &p3Val};
-    root -> next = &p2Val;*/
+    /*Node* p4Node = (Node*)malloc(sizeof(Node));
+    TrailPoint p4 = {(Vector2){400, 400}, 3};
+    p4Node -> data = &p4; p4Node -> next = NULL;
 
     Node* root = (Node*)malloc(sizeof(Node));
-    root -> data = &p1; root -> next = NULL;
+    TrailPoint p1 = {(Vector2){100, 100}, 0};
+    root -> data = &p1; root -> next = NULL;*/
 
-    Node* p2Node = (Node*)malloc(sizeof(Node));
-    p2Node -> data = &p2; p2Node -> next = NULL;
-    root -> next = p2Node;
-
-    Node* p3Node = (Node*)malloc(sizeof(Node));
-    p3Node -> data = &p3; p3Node -> next = NULL;
-    p2Node -> next = p3Node;
     
-
-    printLinkedList(&root);
-    removeTrailPoint(&root, 1);
-    printf("\n");
-    printLinkedList(&root);
-
 
 
 
@@ -158,29 +139,32 @@ int main(){
         }*/
 
         if(GetMouseWheelMove() > 0){
-            timeScale += 0.05;
+            timeScale += 10000;
         }
         else if(GetMouseWheelMove() < 0){
-            timeScale -= 0.05;
+            timeScale -= 10000;
         }
 
         if(timeScale < 0){
             timeScale = 0;
         }
-        else if(timeScale > 5){
-            timeScale = 5;
+        else if(timeScale > 5000000){
+            timeScale = 5000000;
         }
         else{
             downArrowDown = false;
         }
 
         handlePlanets();
+        handlePlanetTrails();
 
         BeginTextureMode(target);
 
             ClearBackground(BLACK);
 
+            drawPlanetTrails();
             drawPlanets();
+            DrawCircleV(mouse, (250 / 10), (Color){255, 255, 255, 100});
             //handleSlider(&slider1);
 
         EndTextureMode();
@@ -197,7 +181,7 @@ int main(){
         
             DrawFPS(10, 50);
             DrawText(TextFormat("Planet Count: %i", planetCount), 10, 10, 20, WHITE);
-            DrawText(TextFormat("Time Scale: %f", timeScale), 10, 30, 20, WHITE);
+            DrawText(TextFormat("Time Scale: %d", timeScale), 10, 30, 20, WHITE);
             DrawText(TextFormat("Merges: %i", merges), 10, 70, 20, WHITE);
             
         EndDrawing();
@@ -226,6 +210,7 @@ void drawPlanets(){
 void handlePlanets(){
     for(int i = 0; i < planetCount; i++){
         calcAppliedForce(i);
+        planets[i].lifespan++;
     }
     calcPlanetCollisions();
 }
@@ -316,17 +301,20 @@ double distanceV2(Vector2 v1, Vector2 v2){
 
 
 void addPlanet(){
-    int mass = GetRandomValue(500, 5000);
+    //long mass = GetRandomValue(2500, 5000);
+    long mass = 250;
     Color color = (Color){GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255};
 
-    //Planet p = {(Vector2){SCREENWIDTH / 2, mouse.y}, (Vector2){0, 0}, mass, 10, RED, PLANET, planetCount};
-    Planet* p = initPlanet((Vector2){SCREENWIDTH / 2, mouse.y}, (Vector2){0, 0}, mass, color);
+    Planet* p = initPlanet((Vector2){mouse.x, mouse.y}, (Vector2){0, 0}, mass, color);
 
-    
     Planet* star = &planets[getNearestStar(p -> position)];
+    double distance = distanceV2(star -> position, p -> position);
+    double stableVel = getStableOribitalVelocity(star -> mass, distance);
     
-    double stableVel = getStableOribitalVelocity(star -> mass, distanceV2(star -> position, p -> position));
-    p -> velocity.x = stableVel;
+    double angleToStar = atan2(star->position.y - p->position.y, star->position.x - p->position.x);
+    double angleForVelocity = angleToStar + PI / 2; // Add 90 degrees
+    p->velocity.x = stableVel * cos(angleForVelocity);
+    p->velocity.y = stableVel * sin(angleForVelocity);
 }
 
 
@@ -363,9 +351,15 @@ double clampAngle(double angle){
 
 
 Planet* initPlanet(Vector2 pos, Vector2 vel, double mass, Color color){
-    double radius = mass / 100;
+    double radius = mass / 10;
+    Node* trailRoot = (Node*) malloc((sizeof(Node) + sizeof(TrailPoint)));
+    TrailPoint* point = (TrailPoint*) malloc(sizeof(TrailPoint));
+    point -> position = pos;
+    point -> id = 0;
+    trailRoot -> data = point;
+    trailRoot -> next = NULL;
 
-    Planet p = {pos, vel, mass, radius, color, PLANET, planetCount};
+    Planet p = {pos, vel, mass, radius, color, PLANET, planetCount, trailRoot, 0, 1};
     planets[planetCount] = p;
     planetCount++;
     return &planets[planetCount - 1];
@@ -373,7 +367,12 @@ Planet* initPlanet(Vector2 pos, Vector2 vel, double mass, Color color){
 
 
 void destroyPlanet(int id){
-    Planet empty = {(Vector2){0, 0}, (Vector2){0, 0}, 0, 0 , (Color){0, 0, 0, 0}, PLANET, -1};
+    Planet empty = {(Vector2){0, 0}, (Vector2){0, 0}, 0, 0 , (Color){0, 0, 0, 0}, PLANET, -1, NULL, 0, 0};
+
+
+    printf("Pre Dealloc\n");
+    deAllocateLinkedList(&planets[id].trailRoot);
+    printf("Post Dealloc\n");
 
     planets[id] = planets[planetCount - 1];
     planets[id].id = id;
@@ -396,7 +395,9 @@ void calcPlanetCollisions(){
                     destroyPlanet(planets[i].id);
                     destroyPlanet(planets[j].id);
 
-                    initPlanet(pi.position, pi.velocity, pi.mass + pj.mass, color);
+                    Vector2 vel = (Vector2){pi.velocity.x * 0.95, pi.velocity.y * 0.95};
+
+                    initPlanet(pi.position, vel, pi.mass + pj.mass, color);
                     merges++;
                 }
             }
@@ -414,7 +415,7 @@ void calcPlanetCollisions(){
 
 void initEmptyPlanets(){
     for(int i = 0; i < MAX_PLANETS; i++){
-        Planet p = {(Vector2){0, 0}, (Vector2){0, 0}, 0, 0 , (Color){0, 0, 0, 0}, PLANET, -1};
+        Planet p = {(Vector2){0, 0}, (Vector2){0, 0}, 0, 0 , (Color){0, 0, 0, 0}, PLANET, -1, NULL};
         planets[i] = p;
     }
 }
@@ -424,7 +425,53 @@ void drawPlanetSettings(){
 }
 
 
-void handleSlider(Slider* slider){
+void handlePlanetTrails(){
+    for(int i = 0; i < planetCount; i++){
+        if(planets[i].class == STAR){continue;}
+        Node* newNode = (Node*) malloc(sizeof(Node) + sizeof(TrailPoint));
+        TrailPoint* point = (TrailPoint*) malloc(sizeof(TrailPoint));
+        point -> position = planets[i].position;
+        point -> id = planets[i].trailLength;
+        newNode -> data = point;
+        newNode -> next = NULL;
+        addNode(newNode, &planets[i].trailRoot);   
+        planets[i].trailLength++;    
+
+        if(planets[i].trailLength >= MAX_TRAIL_LENGTH){
+            //printf("trailLength: %i\n", planets[i].trailLength);
+            TrailPoint* trailRoot = (TrailPoint*)planets[i].trailRoot -> data;
+            if(trailRoot -> id > 997){ // If this isn't here it will crash for some reason
+                trailRoot -> id = 997;
+            }
+            removeNode(&planets[i].trailRoot, compareTrailPoints, planets[i].trailRoot);
+            planets[i].trailLength--;
+        } 
+    }
+
+}
+
+
+void drawPlanetTrails(){
+    for(int i = 0; i < planetCount; i++){
+        if(planets[i].class == STAR){continue;}
+        Node* current = planets[i].trailRoot;
+        while(current -> next != NULL){
+            TrailPoint* point = current -> data;
+            TrailPoint* nextPoint = current -> next -> data;
+            Color lineColor = {planets[i].color.r, planets[i].color.g, planets[i].color.b, 100};
+            DrawLineEx(point -> position, nextPoint -> position, (int)(planets[i].mass / 125), lineColor);
+            current = current -> next;
+        }
+    }
+}
+
+
+
+
+
+
+
+/*void handleSlider(Slider* slider){
     int max = slider->range.y;
     int min = slider->range.x;
     int sliderX = slider->position.x + slider->value - min;
@@ -463,4 +510,4 @@ void handleSlider(Slider* slider){
     DrawRectangle(sliderPos.x, sliderPos.y, (max / stepSize) - min, 10 + slider->size, sliderBackgroundColor);
     DrawRectangle(sliderX - min, sliderPos.y - 5, sliderWidth, 20, sliderColor);
     //printf("%i\n", value);
-}
+}*/

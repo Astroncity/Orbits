@@ -62,6 +62,7 @@
   "files.associations": {
     "utils.h": "c",
     "type_traits": "c",
-    "cstdlib": "c"
+    "cstdlib": "c",
+    "raylib.h": "c"
   }
 }

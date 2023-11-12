@@ -27,22 +27,31 @@ Vector2 vector2Clamp(Vector2 v, Vector2 min, Vector2 max){
 }
 
 
-void removeTrailPoint(Node** root, int val){
+bool compareTrailPoints(void* a, void* b){
+    TrailPoint* pointA = (TrailPoint*)a;
+    TrailPoint* pointB = (TrailPoint*)b;
+    return pointA -> id == pointB -> id;
+}
+
+void removeNode(Node** root, bool (*compare)(void*, void*), void* target){
     Node* current = *root;
     Node* next = current -> next;
     Node* prev = NULL;
 
+    Node* targetNode = (Node*)target;
+
     while(next != NULL){
-        TrailPoint* point = current->data;
-        if(point -> id == val){
+        if(compare(current -> data, targetNode -> data)){
             if(prev == NULL){
                 Node* temp = current;
                 *root = next;
+                //free(temp -> data);
                 free(temp);
             }
             else{
                 Node* temp = current;
                 prev -> next = current -> next;
+                //free(temp -> data);
                 free(temp);
             }
         }
@@ -59,6 +68,7 @@ void printLinkedList(Node** root){
         printf("%d\n", point -> id);
         current = current -> next;
     }
+    printf("\n");
 }
 
 
@@ -70,10 +80,21 @@ Node* getLastNode(Node** root){
     return current;
 }
 
+void deAllocateLinkedList(Node** root){
+    Node* current = *root;
+    while(current != NULL){
+        Node* next = current -> next;
+        free(current);  // Free the node
+        current = next;
+    }
+}
 
-/*Node* addNode(void* data, Node** root){
+Node* addNode(void* new, Node** root){
     Node* last = getLastNode(root);
     Node* newNode = (Node*)malloc(sizeof(Node));
+    Node* inputNode = (Node*)new;
+    newNode -> data = inputNode -> data;
+    newNode -> next = NULL;
     last -> next = newNode;
-    return &newNode;
-}*/
+    return newNode;
+}

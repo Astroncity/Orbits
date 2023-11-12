@@ -10,10 +10,12 @@ typedef struct Node{
 }Node;
 
 
-void removeTrailPoint(Node** root, int val);
+void removeNode(Node** root, bool (*compare)(void*, void*), void* target);
 void printLinkedList(Node** root);
 Node* getLastNode(Node** root);
-//Node* addNode(void* data, Node** root);
+bool compareTrailPoints(void* a, void* b);
+Node* addNode(void* data, Node** root);
+void deAllocateLinkedList(Node** root);
 
 
 
