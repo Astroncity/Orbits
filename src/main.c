@@ -23,6 +23,9 @@
 int runtime = 0;
 double deltaTime;
 int timeScale = 500;
+double SCALE = 1;
+
+Vector2 camera = {0, 0};
 
 bool debug = false;
 
@@ -67,8 +70,11 @@ int planetCount = 0;
 int merges = 0;
 PlanetAttributes currentPlanetAttributes = {50, BLUE, PLANET};
 
+bool placeStar = false;
+
 int main(){
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
+    //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(SCREENWIDTH, SCREENHEIGHT, "Orbits");
     //SetWindowIcon(LoadImageFromMemory(".png", logoImage, sizeof(logoImage)));
     
@@ -80,10 +86,10 @@ int main(){
 
     initEmptyPlanets();
 
-    Planet star = {(Vector2){SCREENWIDTH/2, SCREENHEIGHT/2}, (Vector2){0, 0}, 83250000, 100, YELLOW, STAR, 0, NULL};
+    //Planet star = {(Vector2){SCREENWIDTH/2, SCREENHEIGHT/2}, (Vector2){0, 0}, 83250000, 100, YELLOW, STAR, 0, NULL};
 
-    planets[0] = star;
-    planetCount = 1;
+    //planets[0] = star;
+    //planetCount = 1;
 
     lastMouse = mouse;
 
@@ -136,11 +142,12 @@ int main(){
         //IsMouseButtonDown(MOUSE_LEFT_BUTTON) ? slider1.value = mouse.x - slider1.position.x : 0;
 
 
-        if(IsKeyPressed(KEY_SPACE) && !spaceDown){
-            addPlanet();
+        if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
+            placeStar ? addPlanet() : addStar();
         }
-        else{
-            spaceDown = false;
+
+        if(IsKeyPressed(KEY_SPACE)){
+            placeStar = !placeStar;
         }
 
         /*if(IsKeyPressed(KEY_UP) && !upArrowDown){
@@ -154,11 +161,18 @@ int main(){
             timeScale -= 0.05;
         }*/
 
-        if(GetMouseWheelMove() > 0){
+        if(GetMouseWheelMove() > 0 && !IsKeyDown(KEY_LEFT_ALT)){
             timeScale += 10000;
         }
-        else if(GetMouseWheelMove() < 0){
+        else if(GetMouseWheelMove() < 0 && !IsKeyDown(KEY_LEFT_ALT)){
             timeScale -= 10000;
+        }
+
+        if(GetMouseWheelMove() < 0 && IsKeyDown(KEY_LEFT_ALT)){
+            SCALE -= 0.01;
+        }
+        else if(GetMouseWheelMove() > 0 && IsKeyDown(KEY_LEFT_ALT)){
+            SCALE += 0.01;
         }
 
         if(timeScale < 0){
@@ -171,6 +185,22 @@ int main(){
             downArrowDown = false;
         }
 
+
+        // camera movement
+        if(IsKeyDown(KEY_W)){
+            camera.y -= 10;
+        }
+        if(IsKeyDown(KEY_S)){
+            camera.y += 10;
+        }
+        if(IsKeyDown(KEY_A)){
+            camera.x -= 10;
+        }
+        if(IsKeyDown(KEY_D)){
+            camera.x += 10;
+        }
+
+
         handlePlanets();
         handlePlanetTrails();
 
@@ -180,13 +210,14 @@ int main(){
 
             drawPlanetTrails();
             drawPlanets();
-            DrawCircleV(mouse, (250 / 10), (Color){255, 255, 255, 100});
+            !placeStar ?  DrawCircleV(mouse, 100 * SCALE, (Color){255, 200, 200, 100}) : DrawCircleV(mouse, (250 / 10) * SCALE, (Color){200, 255, 200, 100});
             //handleSlider(&slider1);
 
             DrawFPS(10, 50);
             DrawText(TextFormat("Planet Count: %i", planetCount), 10, 10, 20, WHITE);
             DrawText(TextFormat("Time Scale: %d", timeScale), 10, 30, 20, WHITE);
             DrawText(TextFormat("Merges: %i", merges), 10, 70, 20, WHITE);
+            DrawText(TextFormat("Scale: %f", SCALE), 10, 90, 20, WHITE);
 
         EndTextureMode();
 
@@ -215,11 +246,17 @@ void drawPlanets(){
     for(int i = 0; i < planetCount; i++){
 
         double lineX = planets[i].velocity.x + planets[i].position.x;
-        double lineY = planets[i].velocity.y + planets[i].position.y;        
-        
-        DrawCircleV(planets[i].position, planets[i].radius, planets[i].color);
+        double lineY = planets[i].velocity.y + planets[i].position.y;  
 
-        if(debug){DrawLineEx(planets[i].position, (Vector2){lineX, lineY}, 5, BLUE);} // Vector Arrow
+        Vector2 drawPos = (Vector2){planets[i].position.x - camera.x, planets[i].position.y - camera.y}; 
+    
+        drawPos.x *= SCALE;
+        drawPos.y *= SCALE;
+
+
+        DrawCircleV(drawPos, planets[i].radius * SCALE, planets[i].color);
+
+        if(debug){DrawLineEx(drawPos, (Vector2){lineX, lineY}, 5 * SCALE, BLUE);} // Vector Arrow
     }
 }
 
@@ -322,7 +359,9 @@ void addPlanet(){
     long mass = 250;
     Color color = (Color){GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255};
 
-    Planet* p = initPlanet((Vector2){mouse.x, mouse.y}, (Vector2){0, 0}, mass, color);
+    Vector2 actualMouse = (Vector2){mouse.x * 1/SCALE + camera.x, mouse.y * 1/SCALE + camera.y};
+
+    Planet* p = initPlanet(actualMouse, (Vector2){0, 0}, mass, color);
 
     Planet* star = &planets[getNearestStar(p -> position)];
     double distance = distanceV2(star -> position, p -> position);
@@ -332,6 +371,15 @@ void addPlanet(){
     double angleForVelocity = angleToStar + PI / 2; // Add 90 degrees
     p->velocity.x = stableVel * cos(angleForVelocity);
     p->velocity.y = stableVel * sin(angleForVelocity);
+}
+
+
+void addStar(){
+    Vector2 actualMouse = (Vector2){mouse.x * 1/SCALE + camera.x, mouse.y * 1/SCALE + camera.y};
+
+    Planet new = {actualMouse, (Vector2){0, 0}, 83250000, 100, YELLOW, STAR, 0, NULL};
+    planets[planetCount] = new;
+    planetCount++;
 }
 
 
@@ -423,6 +471,12 @@ void calcPlanetCollisions(){
                     destroyPlanet(planets[i].id);
                 }
             }
+            else if(planets[i].class == STAR && planets[j].class == STAR){
+                if(distanceV2(planets[i].position, planets[j].position) < planets[i].radius + planets[j].radius){
+                    destroyPlanet(planets[i].id);
+                    destroyPlanet(planets[j].id);
+                }
+            }
         }
     }
 
@@ -474,7 +528,15 @@ void drawPlanetTrails(){
             TrailPoint* point = current -> data;
             TrailPoint* nextPoint = current -> next -> data;
             Color lineColor = {planets[i].color.r, planets[i].color.g, planets[i].color.b, 100};
-            DrawLineEx(point -> position, nextPoint -> position, (int)(planets[i].mass / 125), lineColor);
+
+            // accounting for camera
+            Vector2 drawPos1 = (Vector2){(point -> position.x - camera.x) * SCALE, (point -> position.y - camera.y) * SCALE};
+            Vector2 drawPos2 = (Vector2){(nextPoint -> position.x - camera.x) * SCALE, (nextPoint -> position.y - camera.y) * SCALE};
+
+            int thickness = (int)((planets[i].mass / 125) * SCALE);
+            if(thickness < 1){thickness = 1;}
+
+            DrawLineEx(drawPos1, drawPos2, thickness, lineColor);
             current = current -> next;
         }
     }
