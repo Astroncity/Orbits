@@ -94,7 +94,7 @@ int main(){
     lastMouse = mouse;
 
     //UI Testing
-    //Slider slider1 = {{50, 100}, {100, 100}, &currentPlanetAttributes.mass, 0, 1, &currentPlanetAttributes.mass};
+    Slider slider1 = {{50, 100}, {100, 100}, currentPlanetAttributes.mass, 0, 1, &currentPlanetAttributes.mass};
 
 
     /*Node* p4Node = (Node*)malloc(sizeof(Node));
@@ -138,8 +138,7 @@ int main(){
         mouse = vector2Clamp(mouse, (Vector2){0, 0}, (Vector2){(float)SCREENWIDTH, (float)SCREENHEIGHT});
 
 
-
-        //IsMouseButtonDown(MOUSE_LEFT_BUTTON) ? slider1.value = mouse.x - slider1.position.x : 0;
+        IsMouseButtonDown(MOUSE_LEFT_BUTTON) ? slider1.value = mouse.x - slider1.position.x : 0;
 
 
         if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
@@ -161,43 +160,20 @@ int main(){
             timeScale -= 0.05;
         }*/
 
-        if(GetMouseWheelMove() > 0 && !IsKeyDown(KEY_LEFT_ALT)){
-            timeScale += 10000;
-        }
-        else if(GetMouseWheelMove() < 0 && !IsKeyDown(KEY_LEFT_ALT)){
-            timeScale -= 10000;
-        }
-
-        if(GetMouseWheelMove() < 0 && IsKeyDown(KEY_LEFT_ALT)){
-            SCALE -= 0.01;
-        }
-        else if(GetMouseWheelMove() > 0 && IsKeyDown(KEY_LEFT_ALT)){
-            SCALE += 0.01;
-        }
-
-        if(timeScale < 0){
-            timeScale = 0;
-        }
-        else if(timeScale > 5000000){
-            timeScale = 5000000;
-        }
-        else{
-            downArrowDown = false;
-        }
-
+		handleWorld();
 
         // camera movement
         if(IsKeyDown(KEY_W)){
-            camera.y -= 10;
+            camera.y -= 10 / SCALE;
         }
         if(IsKeyDown(KEY_S)){
-            camera.y += 10;
+            camera.y += 10 / SCALE;
         }
         if(IsKeyDown(KEY_A)){
-            camera.x -= 10;
+            camera.x -= 10 / SCALE;
         }
         if(IsKeyDown(KEY_D)){
-            camera.x += 10;
+            camera.x += 10 / SCALE;
         }
 
 
@@ -210,6 +186,11 @@ int main(){
 
             drawPlanetTrails();
             drawPlanets();
+			handleUI();
+			handleSlider(slider1);
+
+
+			
             !placeStar ?  DrawCircleV(mouse, 100 * SCALE, (Color){255, 200, 200, 100}) : DrawCircleV(mouse, (250 / 10) * SCALE, (Color){200, 255, 200, 100});
             //handleSlider(&slider1);
 
@@ -544,16 +525,40 @@ void drawPlanetTrails(){
 
 
 
+void handleWorld(){
+	if(GetMouseWheelMove() > 0 && !IsKeyDown(KEY_LEFT_ALT)){
+		timeScale += 10000;
+	}
+	else if(GetMouseWheelMove() < 0 && !IsKeyDown(KEY_LEFT_ALT)){
+		timeScale -= 10000;
+	}
+
+	if(GetMouseWheelMove() < 0 && IsKeyDown(KEY_LEFT_ALT)){
+		SCALE -= 0.01;
+	}
+	else if(GetMouseWheelMove() > 0 && IsKeyDown(KEY_LEFT_ALT)){
+		SCALE += 0.01;
+	}
+
+	if(timeScale < 0){
+		timeScale = 0;
+	}
+	else if(timeScale > 5000000){
+		timeScale = 5000000;
+	}
+    else{
+        downArrowDown = false;
+    }
+}
 
 
-
-
-/*void handleSlider(Slider* slider){
+void handleSlider(Slider* slider){
     int max = slider->range.y;
     int min = slider->range.x;
-    int sliderX = slider->position.x + slider->value - min;
-    int sliderWidth = 10;
     int value = slider->value;
+    double step = slider->stepSize;
+    int sliderX = slider->position.x + value - min;
+    int sliderWidth = 10;
     double stepSize = slider->stepSize;
     Vector2 sliderPos = slider->position;
 
@@ -587,4 +592,23 @@ void drawPlanetTrails(){
     DrawRectangle(sliderPos.x, sliderPos.y, (max / stepSize) - min, 10 + slider->size, sliderBackgroundColor);
     DrawRectangle(sliderX - min, sliderPos.y - 5, sliderWidth, 20, sliderColor);
     //printf("%i\n", value);
-}*/
+}
+
+
+
+void handleUI(){
+	Rectangle uiBox = {200, 200, 400, 600};
+	DrawRectangleRec(uiBox, (Color){100, 100, 100, 100});
+
+}
+
+
+
+
+
+
+
+
+
+
+

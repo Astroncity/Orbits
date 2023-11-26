@@ -38,8 +38,8 @@
   "C_Cpp_Runner.compilerArgs": [],
   "C_Cpp_Runner.linkerArgs": [],
   "C_Cpp_Runner.includePaths": [
-    "lib",
-    "include"
+    "src/lib",
+    "src/include"
   ],
   "C_Cpp_Runner.includeSearch": [
     "*",

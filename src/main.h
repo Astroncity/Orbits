@@ -49,6 +49,13 @@ void drawPlanetSettings();
 void handlePlanetTrails();
 void drawPlanetTrails();
 void addStar();
-//void handleSlider();
+void handleSlider();
+void handleWorld();
+void handleUI();
+
+
+
+
+
 
 #endif // MAIN_H

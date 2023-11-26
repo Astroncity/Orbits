@@ -13,3 +13,5 @@ cd ..
 #cd ..
 #cloc name --skip-win-hidden --exclude-dir=lib
 #cd name
+
+#cloc Orbits --skip-win-hidden --exclude-dir=lib,raylib.h,rlgl.h,.vscode,run.ps1        
